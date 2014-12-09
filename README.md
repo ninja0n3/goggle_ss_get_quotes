@@ -30,4 +30,13 @@ The resulting data will be displayed starting at C2
 
 Contact me.
 
+### References
+####Yahoo Query Language
+
+#####Quotes Data
+- https://developer.yahoo.com/yql/console/?q=show%20tables&env=store://datatables.org/alltableswithkeys#h=select+*+from+yahoo.finance.quotes+where+symbol+in+(%22YHOO%22%2C%22AAPL%22%2C%22GOOG%22%2C%22MSFT%22)
+
+#####Historical Data
+- https://developer.yahoo.com/yql/console/?q=show%20tables&env=store://datatables.org/alltableswithkeys#h=select+*+from+yahoo.finance.historicaldata+where+symbol+in(%22YHOO%22%2C%22AAPL%22)+and+startDate+%3D+%222009-09-11%22+and+endDate+%3D+%222010-03-10%22
+
 

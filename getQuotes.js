@@ -9,7 +9,6 @@
 /********************************************
  * TODO:
  *
- * - Implement historical data query and add columns - https://developer.yahoo.com/yql/console/?q=show%20tables&env=store://datatables.org/alltableswithkeys#h=select+*+from+yahoo.finance.historicaldata+where+symbol+%3D+%22AAPL%22+and+startDate+%3D+%222014-12-01%22+and+endDate+%3D+%222014-12-05%22
  * - Implement keystats data query and add columns - https://developer.yahoo.com/yql/console/?q=show%20tables&env=store://datatables.org/alltableswithkeys#h=SELECT+*+FROM+yahoo.finance.keystats+WHERE+symbol%3D'AAPL'
  *
  *
@@ -66,7 +65,7 @@ function pullData(){
     var response = UrlFetchApp.fetch(url);
     var json=JSON.parse(response.getContentText());
 
-    fields = getQuoteFields();
+    var fields = getQuoteFields();
 
     // Displays the titles above the selected range
     if(display_titles){
@@ -105,16 +104,56 @@ function pullData(){
     }
 
     // TODO: Get Historical Data from YQL
-    /*startdate = "2014-12-01";
+    startdate = "2014-12-01";
     enddate = "2014-12-05";
     url="https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.historicaldata%20where%20symbol%20in%20("+query+")%20and%20startDate%20%3D%20%22"+startdate+"%22%20and%20endDate%20%3D%20%22"+enddate+"%22&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=";
     response = UrlFetchApp.fetch(url);
     json=JSON.parse(response.getContentText());
 
     var hist=json.query.results.quote;
-    for(i=0; i<range.length; i++){
+    var symbol_count = range.getValues().length;
+    var record_count = json.query.count;
+    var rec_per_sym = parseInt(record_count/symbol_count);
 
-    }*/
+    //Logger.log("Records per symbol: "+rec_per_sym);
+
+    fields= getHistoricalFields();
+
+    for(i=0; i<symbol_count; i++){
+        offset = i+1;
+
+        ecol = dcol;
+        for(j=rec_per_sym*i; j< rec_per_sym*offset; j++){
+            row = srow+lines[i];
+
+
+
+            // Loop Through selected fields
+            for(k=0; k<fields.length; k++){
+
+                // add titles on top
+                if(i == 0 && display_titles){
+                    trow = srow - 1;
+                    if(trow > 0){
+                        sheet.getRange(trow, scol+ecol).setValue(fields[k]+" for "+hist[j]["Date"]);
+                        sheet.getRange(trow, scol+ecol).setFontWeight("bold");
+                        sheet.autoResizeColumn(scol+ecol);
+                    }
+
+                }
+
+                val = hist[j][fields[k]];
+                sheet.getRange(row, scol+ecol++).setValue(val);
+            }
+
+
+
+        }
+
+
+
+
+    }//
 
     // TODO: get Key stats data from YQL
 }
@@ -243,14 +282,17 @@ function getHistoricalFields(){
      *
      ******************************************/
 
-    fields[i++] = "Symbol"; // Symbol
-    fields[i++] = "Date"; // Date
+    //fields[i++] = "Symbol"; // Symbol
+    //fields[i++] = "Date"; // Date
     fields[i++] = "Open"; // Open
     fields[i++] = "High"; // High
     fields[i++] = "Low"; // Low
     fields[i++] = "Close"; // Close
     fields[i++] = "Volume"; // Volume
     fields[i++] = "Adj_Close"; // Adj_Close
+    //*/
+
+    return fields;
 
 
 }
