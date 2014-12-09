@@ -19,7 +19,6 @@ You can also rearrange your columns as needed
 Select a sequential range of cells.
 The script assumes that all ticker symbols are on a single column, the position result will be the last column on the right of your range.
 
-
 ####Example:
 
 Symbols located in range A2:A10

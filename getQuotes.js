@@ -5,6 +5,16 @@
  *
  *
  */
+
+/********************************************
+ * TODO:
+ *
+ * - Implement historical data query and add columns - https://developer.yahoo.com/yql/console/?q=show%20tables&env=store://datatables.org/alltableswithkeys#h=select+*+from+yahoo.finance.historicaldata+where+symbol+%3D+%22AAPL%22+and+startDate+%3D+%222014-12-01%22+and+endDate+%3D+%222014-12-05%22
+ * - Implement keystats data query and add columns - https://developer.yahoo.com/yql/console/?q=show%20tables&env=store://datatables.org/alltableswithkeys#h=SELECT+*+FROM+yahoo.finance.keystats+WHERE+symbol%3D'AAPL'
+ *
+ *
+ ********************************************/
+
 function onOpen() {
     var menu = SpreadsheetApp.getUi().createAddonMenu(); // Or DocumentApp or FormApp.
     menu.addItem('Get Quotes for Active Range', 'pullData');
@@ -12,6 +22,14 @@ function onOpen() {
 }
 
 function pullData(){
+
+    /*************************************
+     * Display Titles - Change below
+     *************************************/
+    var display_titles = true; // true to display titles (default), false to remove titles
+    /*************************************
+     * Display Titles - Change Above
+     *************************************/
 
     var sheet = SpreadsheetApp.getActiveSheet();
     var range = sheet.getActiveRange();
@@ -44,103 +62,201 @@ function pullData(){
     Logger.log(scol);
     Logger.log(srow);
 
-    var url="https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.quotes%20where%20symbol%20in%20("+query+")&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback="
+    var url="https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.quotes%20where%20symbol%20in%20("+query+")&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=";
     var response = UrlFetchApp.fetch(url);
     var json=JSON.parse(response.getContentText());
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // Displays the data collected from Yahoo finance YQL
+    fields = getQuoteFields();
+
+    // Displays the titles above the selected range
+    if(display_titles){
+        trow = srow - 1;
+        if(trow > 0){
+            dcol=0;
+            for(i=0; i<fields.length; i++){
+                sheet.getRange(trow, scol+dcol).setValue(fields[i]);
+                sheet.getRange(trow, scol+dcol).setFontWeight("bold");
+                sheet.autoResizeColumn(scol+dcol);
+                dcol++;
+            }
+        }
+    }
+
+    // Displays the data collected from Yahoo finance YQL for quotes
     var quotes=json.query.results.quote;
-    for(var i=0;i<quotes.length;i++){
+
+    dcol = 0;
+    for(i=0;i<quotes.length;i++){
         row = srow+lines[i];
+
         dcol = 0;
-        sheet.getRange(row,scol).setValue(quotes[i].Name);
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].LastTradePriceOnly); dcol++;
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].symbol); dcol++; // symbol
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].Ask); dcol++; // Ask
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].AverageDailyVolume); dcol++; // AverageDailyVolume
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].Bid); dcol++; // Bid
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].AskRealtime); dcol++; // AskRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].BidRealtime); dcol++; // BidRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].BookValue); dcol++; // BookValue
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].Change_PercentChange); dcol++; // Change_PercentChange
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].Change); dcol++; // Change
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].Commission); dcol++; // Commission
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].Currency); dcol++; // Currency
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].ChangeRealtime); dcol++; // ChangeRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].AfterHoursChangeRealtime); dcol++; // AfterHoursChangeRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].DividendShare); dcol++; // DividendShare
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].LastTradeDate); dcol++; // LastTradeDate
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].TradeDate); dcol++; // TradeDate
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].EarningsShare); dcol++; // EarningsShare
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].ErrorIndicationreturnedforsymbolchangedinvalid); dcol++; // ErrorIndicationreturnedforsymbolchangedinvalid
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].EPSEstimateCurrentYear); dcol++; // EPSEstimateCurrentYear
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].EPSEstimateNextYear); dcol++; // EPSEstimateNextYear
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].EPSEstimateNextQuarter); dcol++; // EPSEstimateNextQuarter
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].DaysLow); dcol++; // DaysLow
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].DaysHigh); dcol++; // DaysHigh
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].YearLow); dcol++; // YearLow
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].YearHigh); dcol++; // YearHigh
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].HoldingsGainPercent); dcol++; // HoldingsGainPercent
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].AnnualizedGain); dcol++; // AnnualizedGain
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].HoldingsGain); dcol++; // HoldingsGain
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].HoldingsGainPercentRealtime); dcol++; // HoldingsGainPercentRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].HoldingsGainRealtime); dcol++; // HoldingsGainRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].MoreInfo); dcol++; // MoreInfo
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].OrderBookRealtime); dcol++; // OrderBookRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].MarketCapitalization); dcol++; // MarketCapitalization
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].MarketCapRealtime); dcol++; // MarketCapRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].EBITDA); dcol++; // EBITDA
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].ChangeFromYearLow); dcol++; // ChangeFromYearLow
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PercentChangeFromYearLow); dcol++; // PercentChangeFromYearLow
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].LastTradeRealtimeWithTime); dcol++; // LastTradeRealtimeWithTime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].ChangePercentRealtime); dcol++; // ChangePercentRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].ChangeFromYearHigh); dcol++; // ChangeFromYearHigh
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PercebtChangeFromYearHigh); dcol++; // PercebtChangeFromYearHigh
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].LastTradeWithTime); dcol++; // LastTradeWithTime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].LastTradePriceOnly); dcol++; // LastTradePriceOnly
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].HighLimit); dcol++; // HighLimit
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].LowLimit); dcol++; // LowLimit
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].DaysRange); dcol++; // DaysRange
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].DaysRangeRealtime); dcol++; // DaysRangeRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].FiftydayMovingAverage); dcol++; // FiftydayMovingAverage
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].TwoHundreddayMovingAverage); dcol++; // TwoHundreddayMovingAverage
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].ChangeFromTwoHundreddayMovingAverage); dcol++; // ChangeFromTwoHundreddayMovingAverage
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PercentChangeFromTwoHundreddayMovingAverage); dcol++; // PercentChangeFromTwoHundreddayMovingAverage
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].ChangeFromFiftydayMovingAverage); dcol++; // ChangeFromFiftydayMovingAverage
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PercentChangeFromFiftydayMovingAverage); dcol++; // PercentChangeFromFiftydayMovingAverage
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].Name); dcol++; // Name
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].Notes); dcol++; // Notes
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].Open); dcol++; // Open
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PreviousClose); dcol++; // PreviousClose
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PricePaid); dcol++; // PricePaid
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].ChangeinPercent); dcol++; // ChangeinPercent
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PriceSales); dcol++; // PriceSales
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PriceBook); dcol++; // PriceBook
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].ExDividendDate); dcol++; // ExDividendDate
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PERatio); dcol++; // PERatio
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].DividendPayDate); dcol++; // DividendPayDate
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PERatioRealtime); dcol++; // PERatioRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PEGRatio); dcol++; // PEGRatio
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PriceEPSEstimateCurrentYear); dcol++; // PriceEPSEstimateCurrentYear
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PriceEPSEstimateNextYear); dcol++; // PriceEPSEstimateNextYear
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].Symbol); dcol++; // Symbol
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].SharesOwned); dcol++; // SharesOwned
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].ShortRatio); dcol++; // ShortRatio
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].LastTradeTime); dcol++; // LastTradeTime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].TickerTrend); dcol++; // TickerTrend
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].OneyrTargetPrice); dcol++; // OneyrTargetPrice
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].Volume); dcol++; // Volume
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].HoldingsValue); dcol++; // HoldingsValue
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].HoldingsValueRealtime); dcol++; // HoldingsValueRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].YearRange); dcol++; // YearRange
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].DaysValueChange); dcol++; // DaysValueChange
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].DaysValueChangeRealtime); dcol++; // DaysValueChangeRealtime
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].StockExchange); dcol++; // StockExchange
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].DividendYield); dcol++; // DividendYield
-        sheet.getRange(row, scol+dcol).setValue(quotes[i].PercentChange); dcol++; // PercentChange
-    }//*/
+        // Loop Through selected fields
+        for(j=0; j<fields.length; j++){
+            var val = quotes[i][fields[j]];
+
+            if(typeof(val) == "string" ){
+                val = val.replace(/\+/g,"");
+            }
+
+            sheet.getRange(row, scol+dcol++).setValue(val);
+        }
+
+
+    }
+
+    // TODO: Get Historical Data from YQL
+    /*startdate = "2014-12-01";
+    enddate = "2014-12-05";
+    url="https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.historicaldata%20where%20symbol%20in%20("+query+")%20and%20startDate%20%3D%20%22"+startdate+"%22%20and%20endDate%20%3D%20%22"+enddate+"%22&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=";
+    response = UrlFetchApp.fetch(url);
+    json=JSON.parse(response.getContentText());
+
+    var hist=json.query.results.quote;
+    for(i=0; i<range.length; i++){
+
+    }*/
+
+    // TODO: get Key stats data from YQL
 }
+
+function getQuoteFields(){
+
+    i=0;
+    fields = [];
+
+    /******************************************
+     *
+     *  Select the desired fields below
+     *  add "//" in front to disable a field as such:
+     *  // fields[i++] = "symbol"; // symbol
+     *
+     *  Fields can be reordered as required by cutting and pasting at a higher/lower position
+     *
+     *  These are all the fields available on yahoo YQL.
+     *  For more info: https://developer.yahoo.com/yql/console/?q=show%20tables&env=store://datatables.org/alltableswithkeys#h=select+*+from+yahoo.finance.quotes+where+symbol+in+(%22YHOO%22%2C%22AAPL%22%2C%22GOOG%22%2C%22MSFT%22)
+     *
+     ******************************************/
+
+    fields[i++] = "symbol"; // symbol
+    fields[i++] = "Ask"; // Ask
+    fields[i++] = "AverageDailyVolume"; // AverageDailyVolume
+    fields[i++] = "Bid"; // Bid
+    fields[i++] = "AskRealtime"; // AskRealtime
+    fields[i++] = "BidRealtime"; // BidRealtime
+    fields[i++] = "BookValue"; // BookValue
+    fields[i++] = "Change_PercentChange"; // Change_PercentChange
+    fields[i++] = "Change"; // Change
+    fields[i++] = "Commission"; // Commission
+    fields[i++] = "Currency"; // Currency
+    fields[i++] = "ChangeRealtime"; // ChangeRealtime
+    fields[i++] = "AfterHoursChangeRealtime"; // AfterHoursChangeRealtime
+    fields[i++] = "DividendShare"; // DividendShare
+    fields[i++] = "LastTradeDate"; // LastTradeDate
+    fields[i++] = "TradeDate"; // TradeDate
+    fields[i++] = "EarningsShare"; // EarningsShare
+    fields[i++] = "ErrorIndicationreturnedforsymbolchangedinvalid"; // ErrorIndicationreturnedforsymbolchangedinvalid
+    fields[i++] = "EPSEstimateCurrentYear"; // EPSEstimateCurrentYear
+    fields[i++] = "EPSEstimateNextYear"; // EPSEstimateNextYear
+    fields[i++] = "EPSEstimateNextQuarter"; // EPSEstimateNextQuarter
+    fields[i++] = "DaysLow"; // DaysLow
+    fields[i++] = "DaysHigh"; // DaysHigh
+    fields[i++] = "YearLow"; // YearLow
+    fields[i++] = "YearHigh"; // YearHigh
+    fields[i++] = "HoldingsGainPercent"; // HoldingsGainPercent
+    fields[i++] = "AnnualizedGain"; // AnnualizedGain
+    fields[i++] = "HoldingsGain"; // HoldingsGain
+    fields[i++] = "HoldingsGainPercentRealtime"; // HoldingsGainPercentRealtime
+    fields[i++] = "HoldingsGainRealtime"; // HoldingsGainRealtime
+    fields[i++] = "MoreInfo"; // MoreInfo
+    fields[i++] = "OrderBookRealtime"; // OrderBookRealtime
+    fields[i++] = "MarketCapitalization"; // MarketCapitalization
+    fields[i++] = "MarketCapRealtime"; // MarketCapRealtime
+    fields[i++] = "EBITDA"; // EBITDA
+    fields[i++] = "ChangeFromYearLow"; // ChangeFromYearLow
+    fields[i++] = "PercentChangeFromYearLow"; // PercentChangeFromYearLow
+    fields[i++] = "LastTradeRealtimeWithTime"; // LastTradeRealtimeWithTime
+    fields[i++] = "ChangePercentRealtime"; // ChangePercentRealtime
+    fields[i++] = "ChangeFromYearHigh"; // ChangeFromYearHigh
+    fields[i++] = "PercebtChangeFromYearHigh"; // PercebtChangeFromYearHigh
+    fields[i++] = "LastTradeWithTime"; // LastTradeWithTime
+    fields[i++] = "LastTradePriceOnly"; // LastTradePriceOnly
+    fields[i++] = "HighLimit"; // HighLimit
+    fields[i++] = "LowLimit"; // LowLimit
+    fields[i++] = "DaysRange"; // DaysRange
+    fields[i++] = "DaysRangeRealtime"; // DaysRangeRealtime
+    fields[i++] = "FiftydayMovingAverage"; // FiftydayMovingAverage
+    fields[i++] = "TwoHundreddayMovingAverage"; // TwoHundreddayMovingAverage
+    fields[i++] = "ChangeFromTwoHundreddayMovingAverage"; // ChangeFromTwoHundreddayMovingAverage
+    fields[i++] = "PercentChangeFromTwoHundreddayMovingAverage"; // PercentChangeFromTwoHundreddayMovingAverage
+    fields[i++] = "ChangeFromFiftydayMovingAverage"; // ChangeFromFiftydayMovingAverage
+    fields[i++] = "PercentChangeFromFiftydayMovingAverage"; // PercentChangeFromFiftydayMovingAverage
+    fields[i++] = "Name"; // Name
+    fields[i++] = "Notes"; // Notes
+    fields[i++] = "Open"; // Open
+    fields[i++] = "PreviousClose"; // PreviousClose
+    fields[i++] = "PricePaid"; // PricePaid
+    fields[i++] = "ChangeinPercent"; // ChangeinPercent
+    fields[i++] = "PriceSales"; // PriceSales
+    fields[i++] = "PriceBook"; // PriceBook
+    fields[i++] = "ExDividendDate"; // ExDividendDate
+    fields[i++] = "PERatio"; // PERatio
+    fields[i++] = "DividendPayDate"; // DividendPayDate
+    fields[i++] = "PERatioRealtime"; // PERatioRealtime
+    fields[i++] = "PEGRatio"; // PEGRatio
+    fields[i++] = "PriceEPSEstimateCurrentYear"; // PriceEPSEstimateCurrentYear
+    fields[i++] = "PriceEPSEstimateNextYear"; // PriceEPSEstimateNextYear
+    fields[i++] = "Symbol"; // Symbol
+    fields[i++] = "SharesOwned"; // SharesOwned
+    fields[i++] = "ShortRatio"; // ShortRatio
+    fields[i++] = "LastTradeTime"; // LastTradeTime
+    fields[i++] = "TickerTrend"; // TickerTrend
+    fields[i++] = "OneyrTargetPrice"; // OneyrTargetPrice
+    fields[i++] = "Volume"; // Volume
+    fields[i++] = "HoldingsValue"; // HoldingsValue
+    fields[i++] = "HoldingsValueRealtime"; // HoldingsValueRealtime
+    fields[i++] = "YearRange"; // YearRange
+    fields[i++] = "DaysValueChange"; // DaysValueChange
+    fields[i++] = "DaysValueChangeRealtime"; // DaysValueChangeRealtime
+    fields[i++] = "StockExchange"; // StockExchange
+    fields[i++] = "DividendYield"; // DividendYield
+    fields[i++] = "PercentChange"; // PercentChange
+    //*/
+    return fields;
+
+}
+
+function getHistoricalFields(){
+
+    i=0;
+    fields = [];
+
+    /******************************************
+     *
+     *  Select the desired fields below
+     *  add "//" in front to disable a field as such:
+     *  // fields[i++] = "symbol"; // symbol
+     *
+     *  Fields can be reordered as required by cutting and pasting at a higher/lower position
+     *
+     *  These are all the fields available on yahoo YQL.
+     *  For more info: https://developer.yahoo.com/yql/console/?q=show%20tables&env=store://datatables.org/alltableswithkeys#h=select+*+from+yahoo.finance.historicaldata+where+symbol+%3D+%22AAPL%22+and+startDate+%3D+%222014-12-01%22+and+endDate+%3D+%222014-12-05%22
+     *
+     ******************************************/
+
+    fields[i++] = "Symbol"; // Symbol
+    fields[i++] = "Date"; // Date
+    fields[i++] = "Open"; // Open
+    fields[i++] = "High"; // High
+    fields[i++] = "Low"; // Low
+    fields[i++] = "Close"; // Close
+    fields[i++] = "Volume"; // Volume
+    fields[i++] = "Adj_Close"; // Adj_Close
+
+
+}
+
+
+
 
 String.prototype.capitalize = function() {
     return this.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
